@@ -20,10 +20,11 @@ function loadSecrets() {
       dirty: !!s.dirty,
       lastSyncAt: s.lastSyncAt || '',
       geminiKey: s.geminiKey || '',
-      geminiModel: s.geminiModel || 'gemini-2.5-flash'
+      geminiModel: s.geminiModel || 'gemini-2.5-flash',
+      geminiModelsCache: Array.isArray(s.geminiModelsCache) ? s.geminiModelsCache : []
     };
   } catch {
-    return { jsonbinKey: '', jsonbinBinId: '', autoSync: true, dirty: false, lastSyncAt: '', geminiKey: '', geminiModel: 'gemini-2.5-flash' };
+    return { jsonbinKey: '', jsonbinBinId: '', autoSync: true, dirty: false, lastSyncAt: '', geminiKey: '', geminiModel: 'gemini-2.5-flash', geminiModelsCache: [] };
   }
 }
 
@@ -370,29 +371,94 @@ Dammi in massimo 6 punti brevi e praticissimi:
 }
 
 // ---------- Assistente AI Google Gemini ----------
+const DEFAULT_GEMINI_MODELS = [
+  { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (veloce e consigliato)' },
+  { id: 'gemini-flash-latest', label: 'Gemini Flash Latest (alias sempre aggiornato da Google)' },
+  { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (più approfondito)' },
+  { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite (ultra rapido)' }
+];
+
+function punteggioModelloGemini(id, escludi = '') {
+  if (!id || id === escludi) return -1000;
+  let p = 0;
+  if (id === 'gemini-flash-latest') p += 85;
+  if (id.includes('flash') && !id.includes('lite')) p += 80;
+  else if (id.includes('flash-lite')) p += 50;
+  else if (id.includes('pro')) p += 40;
+  if (!id.includes('preview') && !id.includes('exp')) p += 25;
+  const ver = id.match(/^gemini-(\d+(?:\.\d+)?)/);
+  if (ver) p += parseFloat(ver[1]) * 12;
+  return p;
+}
+
+async function caricaModelliGemini(apiKeyOverride = '') {
+  const key = (apiKeyOverride || secrets.geminiKey || '').trim();
+  if (!key) throw new Error('Inserisci prima la API Key di Google Gemini');
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error?.message || `Errore caricamento modelli (${res.status})`);
+  const esclusi = /-(tts|image|embedding|audio|vision|robotics|computer-use|aqa|veo|imagen)/i;
+  const lista = (data.models || [])
+    .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+    .map(m => ({ id: String(m.name || '').replace(/^models\//, ''), displayName: m.displayName || '' }))
+    .filter(m => m.id.startsWith('gemini-') && !esclusi.test(m.id))
+    .sort((a, b) => punteggioModelloGemini(b.id) - punteggioModelloGemini(a.id))
+    .map(m => ({ id: m.id, label: m.displayName ? `${m.displayName} (${m.id})` : m.id }));
+  if (!lista.length) throw new Error('Nessun modello Gemini testuale trovato per questa chiave');
+  secrets.geminiModelsCache = lista;
+  saveSecrets();
+  return lista;
+}
+
+function scegliMigliorModelloGemini(lista, escludi = '') {
+  const ord = [...lista].sort((a, b) => punteggioModelloGemini(b.id, escludi) - punteggioModelloGemini(a.id, escludi));
+  return ord.find(m => m.id !== escludi)?.id || '';
+}
+
 async function chiamaGemini(promptUtente) {
   const key = secrets.geminiKey.trim();
   if (!key) throw new Error('API Key di Gemini mancante');
   if (!navigator.onLine) throw new Error('Connessione internet assente: consulta gli appunti già salvati oppure riprova appena hai segnale');
-  const model = (secrets.geminiModel || 'gemini-2.5-flash').trim();
   const sys = "Sei un assistente esperto per una guida turistica abilitata siciliana che opera a Palermo, Monreale e Cefalù. " +
     "Fornisci informazioni storiche, artistiche, architettoniche, demo-etno-antropologiche e gastronomiche rigorose, coinvolgenti e subito spendibili davanti a un gruppo di turisti. " +
     "Distinguere sempre i fatti storici accertati dalle leggende popolari (segnalandole come tali). " +
     "Usa elenchi puntati chiari e paragrafi brevi, facili da leggere rapidamente sullo schermo dello smartphone.";
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: sys }] },
-      contents: [{ role: 'user', parts: [{ text: promptUtente }] }],
-      generationConfig: { temperature: 0.65, maxOutputTokens: 1400 }
-    })
-  });
-  const data = await res.json().catch(() => ({}));
+  const inviaConModello = async mod => {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mod)}:generateContent?key=${encodeURIComponent(key)}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: sys }] },
+        contents: [{ role: 'user', parts: [{ text: promptUtente }] }],
+        generationConfig: { temperature: 0.65, maxOutputTokens: 8192 }
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    return { res, data };
+  };
+
+  let model = (secrets.geminiModel || 'gemini-2.5-flash').trim();
+  let { res, data } = await inviaConModello(model);
+
+  // Se Google ha ritirato/disabilitato il modello impostato, cerca automaticamente il nuovo modello attivo e riprova
+  const errMsg = data?.error?.message || '';
+  if (!res.ok && (res.status === 404 || (res.status === 400 && /not found|not supported|deprecated|retired|decommissioned|no longer available/i.test(errMsg)))) {
+    try {
+      const attivi = await caricaModelliGemini(key);
+      const nuovo = scegliMigliorModelloGemini(attivi, model);
+      if (nuovo && nuovo !== model) {
+        secrets.geminiModel = nuovo;
+        saveSecrets();
+        toast(`🔄 Modello aggiornato automaticamente a ${nuovo}`);
+        ({ res, data } = await inviaConModello(nuovo));
+      }
+    } catch { /* se fallisce anche il recupero lista, riporta l'errore originale sotto */ }
+  }
+
   if (!res.ok) throw new Error(data?.error?.message || `Errore API Gemini (${res.status})`);
-  const txt = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('\n').trim();
+  const txt = data?.candidates?.[0]?.content?.parts?.filter(p => !p.thought).map(p => p.text || '').join('\n').trim();
   if (!txt) throw new Error('Risposta vuota da Gemini');
   return txt;
 }
@@ -434,7 +500,7 @@ function apriAssistenteAI(servizioOrId, tappaIdDefault = '') {
   const draw = () => {
     $('#modalBody').innerHTML = `
       <div class="ai-modal">
-        <div class="row between">
+        <div class="row between modal-head">
           <h2>✨ Approfondisci con Gemini AI</h2>
           <button type="button" class="btn small" id="aiClose">✕</button>
         </div>
@@ -516,6 +582,7 @@ function apriAssistenteAI(servizioOrId, tappaIdDefault = '') {
             </div>
             <div>${formattaMarkdown(testo)}</div>
           </div>`;
+        out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         $('#aiCopy', out).onclick = async () => {
           try { await navigator.clipboard.writeText(testo); toast('Testo copiato'); } catch {}
         };

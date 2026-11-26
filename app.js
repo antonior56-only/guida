@@ -763,6 +763,11 @@ function modaleSito(id) {
 // ---------- Profilo e dati ----------
 function vImpostazioni() {
   const p = db.profilo, t = p.tariffe;
+  const baseModelli = secrets.geminiModelsCache?.length ? secrets.geminiModelsCache : DEFAULT_GEMINI_MODELS;
+  const curMod = secrets.geminiModel || 'gemini-2.5-flash';
+  const gemOpts = baseModelli.some(m => m.id === curMod)
+    ? baseModelli.map(m => [m.id, m.label])
+    : [[curMod, curMod], ...baseModelli.map(m => [m.id, m.label])];
   app.innerHTML = `
   <form id="fProf" class="panel">
     <h2>Il mio profilo (intestazione preventivi)</h2>
@@ -819,7 +824,7 @@ function vImpostazioni() {
     <p class="small">🔑 <b>Come ottenere la chiave gratuita:</b> apri <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener"><b>Google AI Studio – Crea API Key (aistudio.google.com/apikey)</b></a> col tuo account Google, clicca su <b>"Create API key"</b> e incolla il codice qui sotto.</p>
     <div class="row wrap">
       ${field('Google Gemini API Key', `<div class="row"><input name="geminiKey" id="inpGemKey" type="password" value="${esc(secrets.geminiKey)}" placeholder="AIzaSy..." autocomplete="off"><button type="button" class="btn small" id="toggleGemKey" title="Mostra/Nascondi">👁️</button></div>`, 'grow')}
-      ${field('Modello Gemini', `<input name="geminiModel" value="${esc(secrets.geminiModel || 'gemini-2.5-flash')}" placeholder="gemini-2.5-flash">`)}
+      ${field('Modello Gemini (si aggiorna anche in automatico se disabilitato)', `<div class="row">${sel('geminiModel', curMod, gemOpts)}<button type="button" class="btn small" id="btnGemModels" title="Scarica l'elenco aggiornato dei modelli attivi direttamente da Google">🔄 Aggiorna modelli</button></div>`, 'grow')}
     </div>
     <div class="row wrap actions">
       <button class="btn primary" type="submit">💾 Salva chiave Gemini</button>
@@ -903,6 +908,23 @@ function vImpostazioni() {
     saveSecrets();
     toast('Chiave Gemini salvata');
   });
+  $('#btnGemModels').addEventListener('click', async () => {
+    secrets.geminiKey = $('#inpGemKey').value.trim();
+    saveSecrets();
+    if (!geminiAttivo()) { alert('Inserisci prima la API Key di Google Gemini.'); return; }
+    toast('Recupero modelli attivi da Google…');
+    try {
+      const lista = await caricaModelliGemini(secrets.geminiKey);
+      if (!lista.some(m => m.id === secrets.geminiModel)) {
+        secrets.geminiModel = scegliMigliorModelloGemini(lista) || lista[0].id;
+        saveSecrets();
+      }
+      toast(`✅ Caricati ${lista.length} modelli attivi da Google`);
+      render();
+    } catch (err) {
+      alert('Impossibile recuperare l\'elenco modelli:\n' + err.message);
+    }
+  });
   $('#btnGemTest').addEventListener('click', async () => {
     secrets.geminiKey = $('#inpGemKey').value.trim();
     secrets.geminiModel = $('#fGemini').elements.geminiModel.value.trim() || 'gemini-2.5-flash';
@@ -911,7 +933,8 @@ function vImpostazioni() {
     toast('Test connessione Gemini in corso…');
     try {
       const r = await chiamaGemini('Rispondi in una sola riga con un saluto cordiale in siciliano e italiano per una guida turistica di Palermo e Cefalù.');
-      alert('✅ Connessione a Gemini riuscita!\n\n' + r);
+      render();
+      alert(`✅ Connessione riuscita (modello: ${secrets.geminiModel})!\n\n` + r);
     } catch (err) {
       alert('❌ Connessione non riuscita:\n' + err.message);
     }

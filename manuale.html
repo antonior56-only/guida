@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manuale d'Uso – GuidaPA</title>
+  <style>
+    @page { size: A4; margin: 16mm 15mm; }
+    :root {
+      --terra: #b5432a;
+      --terra-d: #8e3320;
+      --oro: #d99b1e;
+      --mare: #185c75;
+      --txt: #26201c;
+      --muted: #695f57;
+      --line: #e4dad0;
+      --bg-soft: #faf6f0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+      color: var(--txt);
+      line-height: 1.52;
+      font-size: 10.5pt;
+      background: #fff;
+    }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 20px; }
+    @media print {
+      .wrap { max-width: none; padding: 0; }
+      .no-print { display: none !important; }
+      h2 { break-after: avoid; page-break-after: avoid; }
+      h3 { break-after: avoid; page-break-after: avoid; }
+      .box, table, .step-card { break-inside: avoid; page-break-inside: avoid; }
+      .page-break { break-before: page; page-break-before: always; }
+    }
+    .top-actions {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 16px; background: var(--bg-soft); border: 1px solid var(--line);
+      border-radius: 10px; margin-bottom: 20px;
+    }
+    .btn {
+      display: inline-block; padding: 8px 14px; border-radius: 8px;
+      background: var(--terra); color: #fff; text-decoration: none; font-weight: 600;
+      border: none; cursor: pointer; font-size: 10pt;
+    }
+    .btn.sec { background: #fff; color: var(--terra-d); border: 1px solid var(--line); }
+    .cover {
+      border: 2px solid var(--terra);
+      border-radius: 14px;
+      padding: 26px 28px;
+      background: linear-gradient(135deg, #fffaf3 0%, #f9efe4 100%);
+      margin-bottom: 20px;
+    }
+    .cover .tag {
+      display: inline-block; background: var(--terra); color: #fff;
+      padding: 3px 10px; border-radius: 999px; font-size: 8.5pt; font-weight: 700;
+      letter-spacing: .5px; text-transform: uppercase;
+    }
+    .cover h1 { margin: 10px 0 6px; font-size: 23pt; color: var(--terra-d); }
+    .cover p.sub { margin: 0 0 12px; font-size: 11.5pt; color: var(--muted); }
+    .toc {
+      background: #fff; border: 1px solid var(--line); border-radius: 10px;
+      padding: 12px 18px; margin-bottom: 18px;
+    }
+    .toc h3 { margin: 0 0 6px; color: var(--terra-d); font-size: 11pt; }
+    .toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 24px; }
+    .toc li { margin: 3px 0; font-size: 9.8pt; }
+    .toc a { color: var(--mare); text-decoration: none; }
+    h2 {
+      font-size: 14.5pt; color: var(--terra-d);
+      border-bottom: 2px solid var(--terra);
+      padding-bottom: 4px; margin: 22px 0 10px;
+    }
+    h3 { font-size: 11.3pt; color: var(--mare); margin: 14px 0 6px; }
+    p { margin: 6px 0; }
+    ul, ol { margin: 6px 0 10px; padding-left: 20px; }
+    li { margin: 3px 0; }
+    code {
+      background: #f3ece2; padding: 1px 5px; border-radius: 4px;
+      font-family: Consolas, ui-monospace, monospace; font-size: 9.5pt;
+    }
+    a { color: var(--mare); }
+    .box {
+      border-left: 4px solid var(--oro); background: #fffaf0;
+      padding: 9px 13px; border-radius: 6px; margin: 10px 0; font-size: 9.8pt;
+    }
+    .box.sec { border-left-color: var(--mare); background: #f1f7fa; }
+    .box.warn { border-left-color: var(--terra); background: #fdf3f0; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 9.6pt; }
+    th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { background: var(--bg-soft); color: var(--terra-d); font-weight: 700; }
+    .badge {
+      display: inline-block; padding: 1px 7px; border-radius: 999px;
+      font-size: 8.5pt; font-weight: 700; background: #eee;
+    }
+    footer {
+      margin-top: 26px; padding-top: 10px; border-top: 1px solid var(--line);
+      font-size: 8.8pt; color: var(--muted); text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-actions no-print">
+    <a class="btn sec" href="index.html">← Torna a GuidaPA</a>
+    <div>
+      <a class="btn sec" href="Manuale_Uso_GuidaPA.pdf" download>⬇️ Scarica PDF pronto</a>
+      <button class="btn" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
+    </div>
+  </div>
+
+  <header class="cover">
+    <span class="tag">Manuale Operativo Completo</span>
+    <h1>🧭 GuidaPA</h1>
+    <p class="sub">Applicazione web progressiva (PWA) per la gestione delle proposte delle agenzie, dei preventivi e della conduzione dei tour guidati tra <b>Palermo, Monreale e Cefalù</b>.</p>
+    <p style="margin:0;font-size:9.5pt;color:#5b5048">
+      Versione 2.0 · Supporto Offline · Cloud JSONBin.io · Assistente Google Gemini AI · Piano Pioggia al coperto
+    </p>
+  </header>
+
+  <nav class="toc">
+    <h3>Indice degli argomenti</h3>
+    <ol>
+      <li><a href="#cap1">Come funziona GuidaPA (PC, Telefono e Offline)</a></li>
+      <li><a href="#cap2">Pubblicare gratis l'app su GitHub Pages</a></li>
+      <li><a href="#cap3">Installare GuidaPA sullo smartphone (Android e iPhone)</a></li>
+      <li><a href="#cap4">Salvataggio Cloud con JSONBin.io (PC ↔ Telefono)</a></li>
+      <li><a href="#cap5">Assistente AI Google Gemini (creazione API Key e uso)</a></li>
+      <li><a href="#cap6">Configurazione iniziale: Profilo, Agenzie e Siti</a></li>
+      <li><a href="#cap7">Gestire le richieste dalle agenzie, Preventivi e Fatture</a></li>
+      <li><a href="#cap8">Modalità Tour sul campo, QR Code e Report finale</a></li>
+      <li><a href="#cap9">Pulsante Cattivo Tempo (Piano Pioggia al coperto)</a></li>
+      <li><a href="#cap10">Sicurezza, Privacy, Backup e domande frequenti</a></li>
+    </ol>
+  </nav>
+
+  <section id="cap1">
+    <h2>1. Come funziona GuidaPA (PC, Telefono e Offline)</h2>
+    <p><b>GuidaPA</b> è progettata su misura per una guida turistica abilitata che lavora su chiamata di agenzie, tour operator e compagnie crocieristiche tra Palermo, Monreale e Cefalù. Unisce due momenti di lavoro distinti:</p>
+    <ul>
+      <li><b>A casa / alla scrivania (PC o tablet):</b> raccogli in un unico posto le richieste che arrivano sparse su WhatsApp ed email, controlli subito sovrapposizioni d'agenda o chiusure dei monumenti, calcoli il preventivo col listino dedicato di ciascuna agenzia, invii il PDF e tieni sotto controllo fatture e scadenze d'incasso.</li>
+      <li><b>Sul campo coi turisti (Smartphone, anche senza rete):</b> controlli i tempi di ogni tappa rispetto all'orario limite di rientro nave/volo, conti rapidamente i partecipanti, mostri il QR del punto di ritrovo, attivi in un tocco il <b>Piano Pioggia al coperto</b>, consulti aneddoti con <b>Gemini AI</b>, mandi messaggi rapidi all'autista e a fine servizio invii il report all'agenzia.</li>
+    </ul>
+    <div class="box sec">
+      <b>Funzionamento ibrido Offline + Cloud:</b> ogni modifica viene salvata all'istante nella memoria interna del dispositivo (<code>localStorage</code>), così non perdi mai nulla nemmeno dentro una chiesa o nei vicoli di Ballarò senza segnale. Quando configuri <b>JSONBin.io</b>, l'app sincronizza automaticamente i dati tra il tuo PC e il tuo telefono appena c'è connessione.
+    </div>
+  </section>
+
+  <section id="cap2">
+    <h2>2. Pubblicare gratis l'app su GitHub Pages</h2>
+    <p>Pubblicare la cartella su <b>GitHub Pages</b> ti fornisce un indirizzo web personale gratuito del tipo <code>https://tuonome.github.io/guidapa/</code>, necessario per aprire e installare l'app sul telefono. Non serve installare alcun programma sul computer.</p>
+
+    <h3>Procedura passo-passo dal browser (10 minuti una sola volta)</h3>
+    <ol>
+      <li>Crea un account gratuito su <b>https://github.com</b> (oppure accedi se ne hai già uno) e conferma il tuo indirizzo email.</li>
+      <li>In alto a destra clicca sul pulsante <b><code>+</code></b> → <b>New repository</b>.</li>
+      <li>Nel campo <b>Repository name</b> scrivi <code>guidapa</code>. Lascia selezionato <b>Public</b> (necessario per avere GitHub Pages gratis), spunta <b>Add a README file</b> e clicca sul pulsante verde <b>Create repository</b>.</li>
+      <li>Nella pagina del repository appena creato clicca su <b>Add file</b> → <b>Upload files</b>.</li>
+      <li>Apri sul computer la cartella <code>guidapa</code>, seleziona tutti i file principali (<code>index.html</code>, <code>style.css</code>, <code>app.js</code>, <code>cloud_ai.js</code>, <code>tour.js</code>, <code>data.js</code>, <code>qrcode.js</code>, <code>manifest.json</code>, <code>sw.js</code>, <code>icon.svg</code>, <code>.nojekyll</code>, <code>manuale.html</code>, <code>Manuale_Uso_GuidaPA.pdf</code>) e trascinali nel riquadro del browser. Attendi il completamento del caricamento e premi il pulsante verde <b>Commit changes</b>.</li>
+      <li>In alto nel repository clicca sulla scheda <b>Settings</b> (icona ingranaggio) e nel menu a sinistra clicca su <b>Pages</b>.</li>
+      <li>Sotto <b>Build and deployment → Source</b> scegli <b>Deploy from a branch</b>; sotto <b>Branch</b> seleziona <b><code>main</code></b> e la cartella <b><code>/ (root)</code></b>, quindi premi <b>Save</b>.</li>
+      <li>Attendi 1–2 minuti e ricarica la pagina <b>Settings → Pages</b>: comparirà in alto il tuo link attivo (es. <code>https://tuonome.github.io/guidapa/</code>).</li>
+    </ol>
+    <div class="box warn">
+      <b>Importante sulla privacy su GitHub:</b> i file caricati su GitHub contengono <b>solo il programma vuoto</b>, mai i tuoi clienti, le tue tariffe reali o le tue chiavi segrete. Tutti i tuoi dati personali viaggiano esclusivamente sul tuo browser e nel tuo archivio privato protetto da chiave su JSONBin.io. Non caricare mai su GitHub i file <code>guidapa-backup-*.json</code>.
+    </div>
+  </section>
+
+  <section id="cap3">
+    <h2>3. Installare GuidaPA sullo smartphone (Android e iPhone)</h2>
+    <p>Una volta ottenuto il tuo indirizzo <code>https://tuonome.github.io/guidapa/</code>, trasformalo in una vera icona sul telefono:</p>
+    <table>
+      <tr>
+        <th style="width:50%">📱 Smartphone Android (Chrome)</th>
+        <th style="width:50%">🍏 iPhone / iPad (Safari)</th>
+      </tr>
+      <tr>
+        <td>
+          1. Apri il link in <b>Google Chrome</b>.<br>
+          2. Tocca il menu <b>⋮</b> in alto a destra.<br>
+          3. Scegli <b>Installa app</b> (oppure <b>Aggiungi a schermata Home</b>).<br>
+          4. Conferma: troverai l'icona <b>🧭 GuidaPA</b> tra le tue app e si aprirà a schermo intero anche senza rete.
+        </td>
+        <td>
+          1. Apri il link in <b>Safari</b>.<br>
+          2. Tocca il pulsante <b>Condividi</b> (quadrato con freccia verso l'alto in basso).<br>
+          3. Scorri e tocca <b>Aggiungi alla schermata Home</b> → <b>Aggiungi</b>.<br>
+          4. L'icona <b>🧭 GuidaPA</b> comparirà sulla Home come un'app nativa.
+        </td>
+      </tr>
+    </table>
+  </section>
+
+  <section id="cap4" class="page-break">
+    <h2>4. Salvataggio Cloud con JSONBin.io (PC ↔ Telefono)</h2>
+    <p><b>JSONBin.io</b> è un servizio cloud gratuito che custodisce in un archivio privato (chiamato <i>Bin</i>) tutti i tuoi servizi, le agenzie, i siti e il profilo, mantenendo allineati computer e smartphone.</p>
+
+    <h3>Configurazione sul primo dispositivo (es. Computer)</h3>
+    <ol>
+      <li>Vai su <b>https://jsonbin.io</b> e registrati gratuitamente (puoi accedere direttamente col tuo account Google).</li>
+      <li>Apri la pagina delle chiavi API: <b>https://jsonbin.io/app/app/api-keys</b> (raggiungibile anche dal link diretto dentro GuidaPA in <b>⚙️ Profilo e dati</b>).</li>
+      <li>Copia il codice mostrato sotto <b>X-Master-Key</b> (inizia solitamente con <code>$2a$10$...</code> o <code>$2b$10$...</code>).</li>
+      <li>In GuidaPA apri <b>⚙️ Profilo e dati → ☁️ Salvataggio Cloud (JSONBin.io)</b> e incolla il codice nel campo <b>JSONBin Master Key</b>.</li>
+      <li>Clicca sul pulsante <b>✨ Crea nuovo archivio (Bin)</b>: GuidaPA creerà automaticamente un archivio privato, compilerà da sola il campo <b>Bin ID</b> e invierà i tuoi dati.</li>
+    </ol>
+
+    <h3>Collegamento del secondo dispositivo (es. Smartphone)</h3>
+    <ol>
+      <li>Apri GuidaPA sullo smartphone e vai in <b>⚙️ Profilo e dati → ☁️ Salvataggio Cloud</b>.</li>
+      <li>Incolla la <b>stessa Master Key</b> e lo <b>stesso Bin ID</b> generato sul computer.</li>
+      <li>Premi <b>💾 Salva impostazioni Cloud</b> e subito dopo <b>⬇️ Scarica da Cloud</b>: ritroverai istantaneamente tutte le tue agenzie e i tuoi servizi!</li>
+    </ol>
+
+    <h3>Significato dell'indicatore Cloud in alto a destra</h3>
+    <table>
+      <tr><th>Icona</th><th>Significato</th><th>Cosa fare</th></tr>
+      <tr><td><code>☁️ Locale</code></td><td>JSONBin non ancora configurato; salvataggio solo sul dispositivo.</td><td>Clicca sull'icona per aprire le impostazioni Cloud.</td></tr>
+      <tr><td><code>☁️ OK</code></td><td>Tutti i dati sono allineati col Cloud.</td><td>Nulla! Cliccandoci puoi forzare un controllo immediato.</td></tr>
+      <tr><td><code>☁️ ⏳</code></td><td>Salvataggio o lettura dal Cloud in corso.</td><td>Attendi un secondo.</td></tr>
+      <tr><td><code>☁️ ⚠️</code></td><td>Sei offline oppure c'è una modifica non ancora inviata.</td><td>Continua pure a lavorare: appena torna la rete invierà da sola (o clicca per riprovare).</td></tr>
+    </table>
+  </section>
+
+  <section id="cap5">
+    <h2>5. Assistente AI Google Gemini (creazione API Key e uso)</h2>
+    <p>Integrando la tua chiave gratuita di <b>Google Gemini</b>, hai un assistente storico-culturale personale pensato per chi guida gruppi a Palermo, Monreale e Cefalù.</p>
+
+    <h3>Come creare gratuitamente la API Key su Google</h3>
+    <ol>
+      <li>Apri il link ufficiale (presente anche dentro l'app): <b>https://aistudio.google.com/apikey</b> accedendo col tuo account Google.</li>
+      <li>Clicca sul pulsante blu <b>Create API key</b> (se richiesto, accetta i termini e scegli <i>Create API key in new project</i>).</li>
+      <li>Copia la stringa generata (inizia con <code>AIzaSy...</code>).</li>
+      <li>In GuidaPA apri <b>⚙️ Profilo e dati → ✨ Assistente AI (Google Gemini)</b>, incolla la chiave e premi <b>💾 Salva chiave Gemini</b>. Puoi verificare subito che tutto funzioni col tasto <b>🧪 Testa connessione Gemini</b>.</li>
+    </ol>
+
+    <h3>Cosa puoi chiedere a Gemini prima e durante il tour</h3>
+    <p>Premendo <b>✨ Approfondisci con Gemini</b> (nella scheda servizio) oppure <b>✨ Chiedi a Gemini</b> / l'icona <b>✨</b> accanto a ogni tappa (in Modalità Tour), l'assistente conosce già automaticamente le tappe scelte, la lingua del gruppo, il numero di partecipanti e le eventuali esigenze speciali:</p>
+    <ul>
+      <li><b>🎭 Aneddoti e curiosità:</b> dettagli iconografici, storie poco note e leggende popolari (distinguendo sempre la storia documentata dalla leggenda).</li>
+      <li><b>🌍 Legami col paese/lingua del gruppo:</b> es. legami normanni o inglesi (Guglielmo II e Giovanna d'Inghilterra, gli Ingham-Whitaker), svevi/tedeschi (Federico II), francesi, spagnoli/aragonesi.</li>
+      <li><b>🍋 Gastronomia e tradizioni vicine:</b> origine araba e monastica dei piatti, street food dei mercati storici, dolci delle feste.</li>
+      <li><b>🗣️ Frasi e termini nella lingua del tour:</b> introduzione pronta e mini-glossario tecnico (es. <i>muqarnas</i>, chiostro binato, tarsie laviche, pantocratore) già tradotto nella lingua degli ospiti.</li>
+      <li><b>Domanda libera di un turista:</b> scrivi qualsiasi curiosità emersa durante la passeggiata.</li>
+    </ul>
+    <div class="box">
+      <b>📌 Trucco per lavorare senza rete:</b> quando prepari il tour da casa (o mentre hai campo), clicca su <b>📌 Salva offline nel tour</b> sopra le risposte migliori di Gemini. Gli appunti resteranno salvati dentro quel servizio e potrai leggerli in <b>Modalità Tour</b> anche dentro il Duomo o nei vicoli senza connessione!
+    </div>
+  </section>
+
+  <section id="cap6" class="page-break">
+    <h2>6. Configurazione iniziale: Profilo, Agenzie e Siti</h2>
+    <ul>
+      <li><b>⚙️ Profilo e tariffe:</b> inserisci nome, cognome, numero tesserino regionale, P.IVA/C.F., IBAN, condizioni di cancellazione, tariffe standard (mezza giornata, intera, ora extra, supplemento lingua, maggiorazione festiva) e i <b>minuti medi di spostamento</b> tra una tappa e l'altra (usati per calcolare la timeline del tour).</li>
+      <li><b>🏢 Agenzie:</b> registra ogni agenzia/tour operator con referente, contatti, giorni di pagamento pattuiti (es. 30 o 60 giorni) ed eventuali <b>tariffe concordate dedicate</b> che sovrascrivono in automatico il listino standard.</li>
+      <li><b>🏛️ Siti e tappe:</b> trovi già precaricati 30 siti tra Palermo, Monreale e Cefalù. Clicca <b>Modifica</b> su ciascun sito per inserire il costo aggiornato del biglietto, i giorni abituali di chiusura, le note operative e la spunta <b>🏛️ Sito al coperto</b> (fondamentale per il Piano Pioggia). Ogni salvataggio aggiorna la data <i>"Verificato il…"</i>.</li>
+    </ul>
+  </section>
+
+  <section id="cap7">
+    <h2>7. Gestire le richieste dalle agenzie, Preventivi e Fatture</h2>
+    <ol>
+      <li><b>Inserimento richiesta:</b> clicca <b>+ Nuova richiesta</b> in alto. Incolla nel primo riquadro il testo originale ricevuto via WhatsApp o email (rimarrà archiviato per consultazione), scegli l'agenzia, data, ora, durata, pax, lingua, punto d'incontro, eventuali contatti di capogruppo e autista, e l'<b>orario limite di rientro</b> (es. <i>tutti a bordo</i> per le crociere).</li>
+      <li><b>Scelta tappe e controlli automatici:</b> spunta le tappe nell'ordine desiderato. Nel pannello destro GuidaPA controlla in tempo reale:
+        <ul>
+          <li>⚠️ eventuali <b>sovrapposizioni d'orario</b> con altri servizi già in agenda;</li>
+          <li>🚫 siti <b>abitualmente chiusi</b> in quel giorno della settimana;</li>
+          <li>⏱️ durata complessiva delle visite superiore alle ore previste;</li>
+          <li>calcolo automatico del compenso (o inserimento di un <b>prezzo forfettario concordato</b>).</li>
+        </ul>
+      </li>
+      <li><b>Preventivo in 1 clic:</b> salva e premi <b>📄 Preventivo</b>. Puoi premere <b>📋 Copia testo per WhatsApp/email</b> per rispondere subito in chat, oppure <b>🖨️ Stampa / Salva PDF</b> (scegliendo <i>"Salva come PDF"</i> nella finestra di stampa) per ottenere un documento intestato e numerato progressivamente.</li>
+      <li><b>Dalla conferma all'incasso:</b> aggiorna lo stato lungo il ciclo <code>Nuova → Preventivata → Confermata → Svolta → Fatturata → Pagata</code>. Quando segni <code>Fatturata</code> inserisci numero e data fattura: l'app calcola la scadenza di pagamento in base agli accordi con l'agenzia e ti avvisa nella schermata <b>🏠 Oggi</b> se ci sono fatture scadute. Con <b>📊 Esporta servizi (Excel/CSV)</b> scarichi il riepilogo per il commercialista.</li>
+    </ol>
+  </section>
+
+  <section id="cap8" class="page-break">
+    <h2>8. Modalità Tour sul campo, QR Code e Report finale</h2>
+    <p>Il giorno della visita apri la scheda <b>🚶 Tour</b> (oppure tocca il pulsante arancione <b>▶ Modalità tour</b> in <b>🏠 Oggi</b>). La schermata mantiene attivo il display quando supportato dal telefono e offre:</p>
+    <ul>
+      <li><b>Barra di stato e margine rientro:</b> in cima vedi l'ora attuale, la <b>fine prevista ricalcolata dal vivo</b> e quanti minuti di margine hai rispetto alla fine del servizio o all'orario limite nave/volo (verde = in orario, giallo = margine sotto 15', rosso = ritardo previsto).</li>
+      <li><b>👥 Conta partecipanti:</b> due pulsanti giganti <code>−</code> e <code>+</code> pensati per contare il gruppo con una mano sola senza guardare lo schermo (con vibrazione sul telefono). Quando raggiungi il totale previsto il riquadro diventa verde. Se hai incollato l'elenco nominativo, puoi fare anche l'appello per nome.</li>
+      <li><b>🗺️ Percorso live:</b> premi <b>▶ Inizia</b> all'ingresso di ogni sito e <b>■ Fine</b> all'uscita. L'app mostra da quanti minuti sei nella tappa, quanto tempo resta e registra il numero di presenti contati.</li>
+      <li><b>📍 Punto di ritrovo con QR offline:</b> scrivi il luogo (o premi <b>📍 Sono qui (GPS)</b>) e tocca <code>+15'</code>, <code>+20'</code>, <code>+30'</code> o <code>+45'</code> per fissare l'orario di ritrovo. Premi <b>🔳 QR mappa per i turisti</b>: compare sullo schermo un grande codice QR generato offline che i turisti possono inquadrare con la fotocamera per avere subito il punto esatto su Google Maps. Con <b>🔳 QR WhatsApp guida</b> permetti al capogruppo di scriverti su WhatsApp senza dettare il numero.</li>
+      <li><b>🚌 Autista, 💶 Spese, 📝 Diario e 🆘 Emergenze:</b> invia in un tocco messaggi WhatsApp precompilati all'autista (<i>"Pronti tra 10'"</i>, <i>"Ritardo 15'"</i>, <i>"Invia posizione ritrovo"</i>), segna eventuali spese anticipate, annota imprevisti (es. funzioni religiose improvvise) e tieni a portata di dito il <code>112</code>, farmacie e pronto soccorso vicini.</li>
+      <li><b>🏁 Chiusura tour e Report agenzia:</b> a fine servizio premi <b>🏁 Chiudi tour e crea report</b>. Il servizio passa automaticamente allo stato <b>Svolta</b> e si apre il resoconto completo (orari effettivi di ogni tappa, partecipanti contati, spese anticipate e note), pronto da inviare con un clic su WhatsApp o via email all'agenzia.</li>
+    </ul>
+  </section>
+
+  <section id="cap9">
+    <h2>9. Pulsante Cattivo Tempo (Piano Pioggia al coperto)</h2>
+    <p>Un acquazzone improvviso a Ballarò o il vento forte sulla Rocca di Cefalù richiedono un cambio rapido di programma. Sia nella <b>Scheda Servizio</b> sia direttamente in <b>Modalità Tour</b> (accanto al titolo <i>Percorso</i>) trovi il pulsante <b>🌧️ Cattivo tempo: al coperto</b>.</p>
+    <ol>
+      <li><b>Analisi istantanea (funziona anche offline):</b> l'app individua tutte le tappe all'aperto (☀️) non ancora svolte e propone per ciascuna la migliore alternativa al coperto (🏛️) nella <b>stessa zona</b> (es. <i>Chiesa del Gesù</i> o <i>Oratori del Serpotta</i> al posto dei mercati e piazze a Palermo; <i>Museo Mandralisca</i> o <i>Osterio Magno</i> al posto della Rocca o del Lavatoio a Cefalù), escludendo automaticamente i musei chiusi in quel giorno della settimana.</li>
+      <li><b>Personalizzazione e anteprima tempi:</b> per ogni tappa puoi scegliere dal menu a tendina un altro monumento al chiuso, mantenere la tappa o rimuoverla, confrontando subito la durata totale prima e dopo.</li>
+      <li><b>Consigli logistici con Gemini (opzionale):</b> premendo <b>✨ Consigli pioggia con Gemini</b> ottieni suggerimenti su portici, passaggi riparati, caffè storici vicini per far sostare il gruppo all'asciutto e una frase positiva nella lingua del tour per presentare la variazione agli ospiti.</li>
+      <li><b>Applicazione e ripristino:</b> premendo <b>✅ Applica variante al coperto</b>, le tappe già visitate vengono preservate, il percorso residuo viene aggiornato e la variazione viene annotata automaticamente nel <b>Diario del tour</b> (così comparirà anche nel report finale per l'agenzia). Se più tardi torna il sole, riaprendo la stessa finestra compare il tasto <b>☀️ Ripristina itinerario originale</b>!</li>
+    </ol>
+  </section>
+
+  <section id="cap10">
+    <h2>10. Sicurezza, Privacy, Backup e domande frequenti</h2>
+    <ul>
+      <li><b>Dove vengono salvate le chiavi API di JSONBin e Gemini?</b> Esclusivamente nel tuo browser (chiave separata <code>guidapa_secrets_v1</code>). Non vengono mai incluse né nel codice pubblicato su GitHub né nei file <code>guidapa-backup.json</code> esportati.</li>
+      <li><b>Consiglio di sicurezza periodico:</b> anche se usi JSONBin.io, una volta ogni 1–2 settimane vai in <b>⚙️ Profilo e dati → ⬇️ Scarica backup (JSON)</b> sul computer: avrai sempre una copia storica offline di tutti i tuoi servizi.</li>
+      <li><b>Ho aggiornato un file su GitHub ma sul telefono vedo la versione precedente:</b> chiudi completamente l'app sul telefono e riaprila con connessione internet attiva; il Service Worker scaricherà automaticamente i file aggiornati.</li>
+      <li><b>Posso usare GuidaPA senza JSONBin o senza Gemini?</b> Certamente: entrambi sono facoltativi. Senza JSONBin i dati restano sul singolo dispositivo (trasferibili col file di backup JSON); senza Gemini tutte le altre funzioni (incluso il Piano Pioggia al coperto e i codici QR) continuano a funzionare al 100% offline.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <b>GuidaPA</b> – Manuale Operativo per Guida Turistica (Palermo · Monreale · Cefalù)
+  </footer>
+</div>
+</body>
+</html>

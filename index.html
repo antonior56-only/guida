@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GuidaPA – Gestione servizi guida</title>
+  <meta name="theme-color" content="#b5432a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar no-print">
+    <a href="#/dashboard" class="logo">🧭 GuidaPA</a>
+    <div class="row">
+      <button type="button" id="cloudBtn" class="btn small cloud-off">☁️ Locale</button>
+      <a href="#/servizio/nuovo" class="btn primary">+ Nuova richiesta</a>
+    </div>
+  </header>
+
+  <nav class="tabs no-print">
+    <a href="#/dashboard" data-route="dashboard">🏠 Oggi</a>
+    <a href="#/richieste" data-route="richieste">📥 Richieste</a>
+    <a href="#/tour" data-route="tour">🚶 Tour</a>
+    <a href="#/agenda" data-route="agenda">📅 Agenda</a>
+    <a href="#/agenzie" data-route="agenzie">🏢 Agenzie</a>
+    <a href="#/siti" data-route="siti">🏛️ Siti</a>
+    <a href="#/impostazioni" data-route="impostazioni">⚙️ Profilo e dati</a>
+    <a href="Manuale_Uso_GuidaPA.pdf" target="_blank" rel="noopener">📖 Manuale PDF</a>
+  </nav>
+
+  <main id="app"></main>
+
+  <dialog id="modal"><div id="modalBody"></div></dialog>
+  <div id="toast" class="no-print"></div>
+
+  <script src="qrcode.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="cloud_ai.js"></script>
+  <script src="tour.js"></script>
+</body>
+</html>

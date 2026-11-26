@@ -355,13 +355,13 @@ function apriPianoPioggia(servizioRef, { inTour = false, onApply = null } = {}) 
     try {
       const nomiPrima = (servizioRef.tappe || []).map(id => sito(id)?.nome || id).join(', ');
       const nomiDopo = nuove.map(id => sito(id)?.nome || id).join(', ');
-      const prompt = `Piove durante un tour guidato (${servizioRef.pax || 'gruppo'} persone, lingua ${servizioRef.lingua || 'Italiano'}${servizioRef.esigenze ? ', esigenze: ' + servizioRef.esigenze : ''}).
+      const prompt = `Piove durante un tour guidato (${servizioRef.pax || 'gruppo'} persone, turisti di lingua ${servizioRef.lingua || 'Italiano'}${servizioRef.esigenze ? ', esigenze: ' + servizioRef.esigenze : ''}).
 Percorso iniziale: ${nomiPrima || 'da definire'}.
 Nuovo percorso al coperto: ${nomiDopo || 'da definire'}.
-Dammi in massimo 6 punti brevi e praticissimi:
+Rispondi rigorosamente IN ITALIANO in massimo 6 punti brevi e praticissimi:
 1) Passaggi riparati, portici o tragitti più brevi tra queste tappe;
 2) 1-2 soste storiche al chiuso (caffè, pasticcerie, chiostri coperti o chiese vicine) utili per riparare il gruppo;
-3) Una frase brillante e positiva (anche in ${servizioRef.lingua || 'Italiano'}) per presentare il cambio programma al gruppo valorizzando i siti al coperto.`;
+3) Come presentare in modo brillante e positivo il cambio programma al gruppo valorizzando i siti al coperto.`;
       const txt = await chiamaGemini(prompt);
       box.innerHTML = `<div class="ai-res">${formattaMarkdown(txt)}</div>`;
     } catch (e) {
@@ -419,9 +419,10 @@ async function chiamaGemini(promptUtente) {
   const key = secrets.geminiKey.trim();
   if (!key) throw new Error('API Key di Gemini mancante');
   if (!navigator.onLine) throw new Error('Connessione internet assente: consulta gli appunti già salvati oppure riprova appena hai segnale');
-  const sys = "Sei un assistente esperto per una guida turistica abilitata siciliana che opera a Palermo, Monreale e Cefalù. " +
-    "Fornisci informazioni storiche, artistiche, architettoniche, demo-etno-antropologiche e gastronomiche rigorose, coinvolgenti e subito spendibili davanti a un gruppo di turisti. " +
-    "Distinguere sempre i fatti storici accertati dalle leggende popolari (segnalandole come tali). " +
+  const sys = "Sei un assistente esperto per una guida turistica abilitata italiana che opera in Sicilia (Palermo, Monreale e Cefalù). " +
+    "REGOLA OBBLIGATORIA SULLA LINGUA: Rispondi SEMPRE ED ESCLUSIVAMENTE IN ITALIANO, anche quando il gruppo di turisti è straniero (inglese, francese, tedesco, spagnolo, ecc.), perché il tuo interlocutore è la guida italiana. " +
+    "Fornisci informazioni storiche, artistiche, architettoniche, demo-etno-antropologiche e gastronomiche rigorose, coinvolgenti e subito spendibili. " +
+    "Distingui sempre i fatti storici accertati dalle leggende popolari (segnalandole come tali). " +
     "Usa elenchi puntati chiari e paragrafi brevi, facili da leggere rapidamente sullo schermo dello smartphone.";
 
   const inviaConModello = async mod => {
@@ -465,6 +466,7 @@ async function chiamaGemini(promptUtente) {
 
 function formattaMarkdown(txt) {
   return esc(txt)
+    .replace(/^\s*---+\s*$/gm, '<hr style="border:none;border-top:1px solid var(--line);margin:8px 0">')
     .replace(/^###\s+(.+)$/gm, '<h4>$1</h4>')
     .replace(/^##\s+(.+)$/gm, '<h3>$1</h3>')
     .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
@@ -474,15 +476,16 @@ function formattaMarkdown(txt) {
 }
 
 function contestoServizioAI(s, tappaIdSpecifica) {
-  if (!s) return 'Zona: Palermo, Monreale e Cefalù.';
+  if (!s) return 'Zona: Palermo, Monreale e Cefalù.\nRispondi sempre in lingua italiana.';
   const tappeNomi = (s.tappe || []).map(id => sito(id)?.nome || id);
   const focus = tappaIdSpecifica ? sito(tappaIdSpecifica)?.nome : '';
   return [
     s.titolo ? `Tour: ${s.titolo}` : '',
     focus ? `Tappa attuale su cui concentrarsi: ${focus}` : '',
     tappeNomi.length ? `Itinerario completo: ${tappeNomi.join(' → ')}` : '',
-    `Gruppo: ${s.pax || 'n.d.'} partecipanti, lingua del tour: ${s.lingua || 'Italiano'}`,
-    s.esigenze ? `Esigenze particolari del gruppo: ${s.esigenze}` : ''
+    `Composizione gruppo: ${s.pax || 'n.d.'} partecipanti (provenienza/lingua parlata dai turisti: ${s.lingua || 'Italiano'})`,
+    s.esigenze ? `Esigenze particolari del gruppo: ${s.esigenze}` : '',
+    'IMPORTANTE: Scrivi tutta la risposta IN ITALIANO per la guida.'
   ].filter(Boolean).join('\n');
 }
 
@@ -528,7 +531,7 @@ function apriAssistenteAI(servizioOrId, tappaIdDefault = '') {
           <button type="button" class="chip ai-preset" data-tipo="aneddoti">🎭 Aneddoti e curiosità</button>
           <button type="button" class="chip ai-preset" data-tipo="ponti">🌍 Legami col paese/lingua del gruppo</button>
           <button type="button" class="chip ai-preset" data-tipo="gastro">🍋 Gastronomia e tradizioni vicine</button>
-          <button type="button" class="chip ai-preset" data-tipo="lingua">🗣️ Frasi e termini in ${esc(s?.lingua || 'lingua')}</button>
+          <button type="button" class="chip ai-preset" data-tipo="lingua">🗣️ Glossario termini (${esc(s?.lingua || 'lingua')})</button>
           <button type="button" class="chip ai-preset" data-tipo="bambini">👨‍👩‍👧 Coinvolgere il gruppo / quiz</button>
         </div>
 
@@ -599,11 +602,11 @@ function apriAssistenteAI(servizioOrId, tappaIdDefault = '') {
 
     $$('.ai-preset', dlg).forEach(b => b.onclick = () => {
       const prompts = {
-        aneddoti: ['Aneddoti e curiosità', 'Suggerisci 4-5 dettagli sorprendenti, aneddoti storici verificati, simboli nascosti o leggende popolari (specificando quando è leggenda) da raccontare dal vivo per catturare l\'attenzione dei turisti.'],
-        ponti: ['Ponti culturali', `Evidenzia i collegamenti storici, artistici, dinastici o culturali tra questi luoghi siciliani e il mondo di lingua/cultura ${s?.lingua || 'internazionale'}, con riferimenti che facciano sentire i visitatori coinvolti.`],
-        gastro: ['Gastronomia e tradizioni', 'Suggerisci specialità gastronomiche storiche (es. cucina arabo-sicula, dolci dei monasteri, street food, presidi locali), feste o botteghe tradizionali legate a questa zona, con brevi cenni storici da raccontare.'],
-        lingua: [`Frasi e glossario (${s?.lingua || 'lingua'})`, `Scrivi una breve introduzione d'effetto e un mini-glossario dei 6-8 termini architettonici/artistici chiave di queste tappe tradotti e spiegati direttamente in ${s?.lingua || 'Inglese'}.`],
-        bambini: ['Coinvolgimento del gruppo', 'Proponi 3 domande-gioco, dettagli visivi da far cercare ("caccia al dettaglio") o spunti interattivi adatti a mantenere alta l\'attenzione del gruppo.']
+        aneddoti: ['Aneddoti e curiosità', 'Rispondi in italiano suggerendo 4-5 dettagli sorprendenti, aneddoti storici verificati, simboli nascosti o leggende popolari (specificando quando è leggenda) da raccontare dal vivo per catturare l\'attenzione dei turisti.'],
+        ponti: ['Ponti culturali', `Rispondi in italiano evidenziando i collegamenti storici, artistici, dinastici o culturali tra questi luoghi siciliani e il mondo di cultura/lingua ${s?.lingua || 'internazionale'}, con riferimenti che facciano sentire i visitatori coinvolti.`],
+        gastro: ['Gastronomia e tradizioni', 'Rispondi in italiano suggerendo specialità gastronomiche storiche (es. cucina arabo-sicula, dolci dei monasteri, street food, presidi locali), feste o botteghe tradizionali legate a questa zona, con brevi cenni storici da raccontare.'],
+        lingua: [`Glossario termini (${s?.lingua || 'lingua'})`, `Rispondi in italiano fornendo un mini-glossario dei 6-8 termini architettonici e artistici chiave di queste tappe: per ciascuno indica il termine in italiano, la spiegazione in italiano e accanto la traduzione esatta del termine in ${s?.lingua || 'Inglese'}.`],
+        bambini: ['Coinvolgimento del gruppo', 'Rispondi in italiano proponendo 3 domande-gioco, dettagli visivi da far cercare ("caccia al dettaglio") o spunti interattivi adatti a mantenere alta l\'attenzione del gruppo.']
       };
       const [tit, p] = prompts[b.dataset.tipo];
       esegui(tit, p);
@@ -613,7 +616,7 @@ function apriAssistenteAI(servizioOrId, tappaIdDefault = '') {
       e.preventDefault();
       const dom = $('#aiDomanda', dlg).value.trim();
       if (!dom) return;
-      esegui(dom.slice(0, 50), dom + `\n(Se utile, aggiungi anche una sintesi pronta da dire in ${s?.lingua || 'Italiano'}).`);
+      esegui(dom.slice(0, 50), dom + '\n(Rispondi sempre in italiano).');
     };
 
     $$('[data-delai]', dlg).forEach(a => a.onclick = e => {

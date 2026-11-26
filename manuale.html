@@ -157,7 +157,7 @@
       <li>In alto a destra clicca sul pulsante <b><code>+</code></b> → <b>New repository</b>.</li>
       <li>Nel campo <b>Repository name</b> scrivi <code>guidapa</code>. Lascia selezionato <b>Public</b> (necessario per avere GitHub Pages gratis), spunta <b>Add a README file</b> e clicca sul pulsante verde <b>Create repository</b>.</li>
       <li>Nella pagina del repository appena creato clicca su <b>Add file</b> → <b>Upload files</b>.</li>
-      <li>Apri sul computer la cartella <code>guidapa</code>, seleziona tutti i file principali (<code>index.html</code>, <code>style.css</code>, <code>app.js</code>, <code>cloud_ai.js</code>, <code>tour.js</code>, <code>data.js</code>, <code>qrcode.js</code>, <code>manifest.json</code>, <code>sw.js</code>, <code>icon.svg</code>, <code>.nojekyll</code>, <code>manuale.html</code>, <code>Manuale_Uso_GuidaPA.pdf</code>) e trascinali nel riquadro del browser. Attendi il completamento del caricamento e premi il pulsante verde <b>Commit changes</b>.</li>
+      <li>Apri sul computer la cartella <code>guidapa</code>, seleziona tutti i file principali (<code>index.html</code>, <code>style.css</code>, <code>app.js</code>, <code>percorso.js</code>, <code>cloud_ai.js</code>, <code>tour.js</code>, <code>data.js</code>, <code>qrcode.js</code>, <code>manifest.json</code>, <code>sw.js</code>, <code>icon.svg</code>, <code>.nojekyll</code>, <code>manuale.html</code>, <code>Manuale_Uso_GuidaPA.pdf</code>) e trascinali nel riquadro del browser. Attendi il completamento del caricamento e premi il pulsante verde <b>Commit changes</b>.</li>
       <li>In alto nel repository clicca sulla scheda <b>Settings</b> (icona ingranaggio) e nel menu a sinistra clicca su <b>Pages</b>.</li>
       <li>Sotto <b>Build and deployment → Source</b> scegli <b>Deploy from a branch</b>; sotto <b>Branch</b> seleziona <b><code>main</code></b> e la cartella <b><code>/ (root)</code></b>, quindi premi <b>Save</b>.</li>
       <li>Attendi 1–2 minuti e ricarica la pagina <b>Settings → Pages</b>: comparirà in alto il tuo link attivo (es. <code>https://tuonome.github.io/guidapa/</code>).</li>
@@ -254,7 +254,7 @@
     <ul>
       <li><b>⚙️ Profilo e tariffe:</b> inserisci nome, cognome, numero tesserino regionale, P.IVA/C.F., IBAN, condizioni di cancellazione, tariffe standard (mezza giornata, intera, ora extra, supplemento lingua, maggiorazione festiva) e i <b>minuti medi di spostamento</b> tra una tappa e l'altra (usati per calcolare la timeline del tour).</li>
       <li><b>🏢 Agenzie:</b> registra ogni agenzia/tour operator con referente, contatti, giorni di pagamento pattuiti (es. 30 o 60 giorni) ed eventuali <b>tariffe concordate dedicate</b> che sovrascrivono in automatico il listino standard.</li>
-      <li><b>🏛️ Siti e tappe:</b> trovi già precaricati 30 siti tra Palermo, Monreale e Cefalù. Clicca <b>Modifica</b> su ciascun sito per inserire il costo aggiornato del biglietto, i giorni abituali di chiusura, le note operative e la spunta <b>🏛️ Sito al coperto</b> (fondamentale per il Piano Pioggia). Ogni salvataggio aggiorna la data <i>"Verificato il…"</i>.</li>
+      <li><b>🏛️ Siti e tappe:</b> trovi già precaricati 30 siti tra Palermo, Monreale e Cefalù, completi di <b>coordinate GPS</b>, <b>fasce orarie feriali/festive</b> e <b>link al sito web ufficiale / biglietteria</b> (<code>🌐 verifica orari e tariffe ↗</code>). Clicca <b>Modifica</b> su ciascun sito per aprire la pagina ufficiale, aggiornare costo biglietto, orari di apertura/pausa pranzo (es. <code>09:00-12:45, 14:00-17:00</code>), giorni di chiusura e la spunta <b>🏛️ Sito al coperto</b>.</li>
     </ul>
   </section>
 
@@ -262,11 +262,11 @@
     <h2>7. Gestire le richieste dalle agenzie, Preventivi e Fatture</h2>
     <ol>
       <li><b>Inserimento richiesta:</b> clicca <b>+ Nuova richiesta</b> in alto. Incolla nel primo riquadro il testo originale ricevuto via WhatsApp o email (rimarrà archiviato per consultazione), scegli l'agenzia, data, ora, durata, pax, lingua, punto d'incontro, eventuali contatti di capogruppo e autista, e l'<b>orario limite di rientro</b> (es. <i>tutti a bordo</i> per le crociere).</li>
-      <li><b>Scelta tappe e controlli automatici:</b> spunta le tappe nell'ordine desiderato. Nel pannello destro GuidaPA controlla in tempo reale:
+      <li><b>Scelta tappe, ottimizzazione ordine e controlli automatici:</b> spunta i siti desiderati e premi <b>🧭 Ottimizza ordine</b>. Partendo dal <b>Punto d'incontro</b> indicato (se scrivi un hotel non in elenco puoi cliccare <b>📍</b> per localizzarlo) e dall'ora d'inizio, GuidaPA riordina automaticamente le tappe per <b>vicinanza geografica</b> e <b>orari di apertura/chiusura</b> (anticipando i monumenti che chiudono prima o per pausa pranzo). Puoi anche ritoccare l'ordine a mano con le frecce <code>↑</code> <code>↓</code> o vedere il tragitto completo con <b>🗺️ Mappa</b>. Nel pannello destro l'app segnala subito:
         <ul>
           <li>⚠️ eventuali <b>sovrapposizioni d'orario</b> con altri servizi già in agenda;</li>
-          <li>🚫 siti <b>abitualmente chiusi</b> in quel giorno della settimana;</li>
-          <li>⏱️ durata complessiva delle visite superiore alle ore previste;</li>
+          <li>🚫 siti <b>chiusi</b> in quel giorno della settimana o ⏰ arrivi previsti <b>fuori fascia d'apertura</b>;</li>
+          <li>⏱️ durata complessiva (visite + spostamenti a piedi/bus) superiore alle ore previste;</li>
           <li>calcolo automatico del compenso (o inserimento di un <b>prezzo forfettario concordato</b>).</li>
         </ul>
       </li>

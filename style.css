@@ -207,6 +207,16 @@ table.kv td:first-child { color: var(--muted); }
 .ai-saved { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .ai-card { background: #faf6f0; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; line-height: 1.45; }
 
+/* Scaletta interattiva e ottimizzatore percorso */
+.scaletta { display: flex; flex-direction: column; gap: 6px; }
+.sc-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--ok); border-radius: 8px; padding: 7px 10px; line-height: 1.4; }
+.sc-row.sc-warn { border-left-color: var(--oro); background: #fffdf6; }
+.sc-row.sc-bad { border-left-color: #b3261e; background: #fff5f4; }
+.sc-move { display: inline-block; background: #f2ebe1; border-radius: 5px; padding: 1px 6px; font-size: .82rem; color: var(--txt); }
+.sc-act { display: flex; gap: 4px; flex-shrink: 0; }
+.sc-act .btn.small { padding: 3px 8px; }
+.ord-pill { display: none; background: var(--terra); color: #fff; font-size: .72rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
+
 @media print {
   .no-print, .topbar, .tabs { display: none !important; }
   body { background: #fff; }

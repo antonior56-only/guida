@@ -1,10 +1,11 @@
 // Service worker: rende i file dell'app utilizzabili offline quando pubblicata su GitHub Pages / HTTPS.
-const CACHE = 'guidapa-v5';
+const CACHE = 'guidapa-v8';
 const FILES = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './percorso.js',
   './cloud_ai.js',
   './tour.js',
   './qrcode.js',

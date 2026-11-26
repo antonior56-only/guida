@@ -58,13 +58,20 @@ function ensureTour(s) {
   return T;
 }
 
-// Orari pianificati delle tappe (minuti dalla mezzanotte)
+// Orari pianificati delle tappe (minuti dalla mezzanotte), con tempi reali di spostamento
 function piano(s) {
+  if (typeof simulaScaletta === 'function') {
+    const sim = simulaScaletta(s, s.tappe);
+    return sim.steps.map((x, i) => ({
+      i, id: x.id, t: x.st, inizio: x.inizio, fine: x.fine, spost: x.spost, notaOrario: x.notaOrario,
+      spostDopo: sim.steps[i + 1] ? sim.steps[i + 1].spost.min : 0
+    }));
+  }
   const sp = spostamento();
   let c = minuti(s.ora);
-  return (s.tappe || []).map((id, i) => {
+  return (s.tappe || []).map((id, i, a) => {
     const t = sito(id) || { nome: id, durata: 30, zona: '' };
-    const p = { i, id, t, inizio: c, fine: c + num(t.durata) };
+    const p = { i, id, t, inizio: c, fine: c + num(t.durata), spostDopo: i < a.length - 1 ? sp : 0 };
     c = p.fine + sp;
     return p;
   });
@@ -72,13 +79,14 @@ function piano(s) {
 
 // Previsione dell'orario di fine in base a quanto già svolto
 function fineprevista(s) {
-  const P = piano(s), T = s.tour, sp = spostamento(), now = oraMin();
+  const P = piano(s), T = s.tour, now = oraMin();
   if (!P.length) return intervallo(s)[1];
   const avviato = !!T.avviatoIl;
   let cursor = null;
   for (const p of P) {
     const r = T.tappe[p.i] || {};
     const dur = num(p.t.durata);
+    const sp = p.spostDopo ?? spostamento();
     if (r.fine) cursor = minDa(r.fine) + sp;
     else if (r.inizio) cursor = Math.max(now, minDa(r.inizio) + dur) + sp;
     else {
@@ -86,7 +94,7 @@ function fineprevista(s) {
       cursor = start + dur + sp;
     }
   }
-  return cursor - sp;
+  return cursor;
 }
 
 function tappaCorrente(s) {
@@ -142,14 +150,16 @@ function vTour(id) {
     const r = T.tappe[p.i] || {};
     const inCorso = r.inizio && !r.fine;
     const rit = r.inizio ? minDa(r.inizio) - p.inizio : null;
+    const u = safeUrl(p.t.url);
     return `<li class="tp ${inCorso ? 'now' : ''} ${r.fine ? 'done' : ''}">
       <div class="tp-h">
-        <div><b>${p.t.coperto ? '🏛️' : '☀️'} ${p.i + 1}. ${esc(p.t.nome)}</b>
+        <div><b>${p.t.coperto ? '🏛️' : '☀️'} ${p.i + 1}. ${esc(p.t.nome)}</b> ${u ? `<a href="${esc(u)}" target="_blank" rel="noopener" class="small" title="Sito ufficiale (${esc(dominioUrl(u))})">🌐</a>` : ''}
           <div class="small muted">Previsto ${fmtMin(p.inizio)}–${fmtMin(p.fine)} (${p.t.durata}')</div>
           ${r.inizio ? `<div class="small">Effettivo ${hhmm(r.inizio)}${r.fine ? '–' + hhmm(r.fine) : ''} <span class="rit ${rit > 10 ? 'bad' : rit > 0 ? 'mid' : 'good'}">${segno(rit)}</span>${r.conta != null ? ` · contati ${r.conta}` : ''}</div>` : ''}
           ${inCorso ? `<div class="small"><b id="elapsed" data-inizio="${r.inizio}" data-durata="${p.t.durata}"></b></div>` : ''}
         </div>
         <div class="tp-b">
+          ${!r.inizio ? `<button class="btn small" data-tmove="${p.i}:-1" ${p.i === 0 || T.tappe[p.i - 1]?.inizio ? 'disabled' : ''} title="Sposta su">↑</button><button class="btn small" data-tmove="${p.i}:1" ${p.i === P.length - 1 ? 'disabled' : ''} title="Sposta giù">↓</button>` : ''}
           <button class="btn small" data-ai="${esc(p.id)}" title="Approfondisci questa tappa con Gemini AI">✨</button>
           ${!r.inizio ? `<button class="btn ${cur?.i === p.i ? 'primary' : ''}" data-start="${p.i}">▶ Inizia</button>` : ''}
           ${inCorso ? `<button class="btn primary" data-end="${p.i}">■ Fine</button>` : ''}
@@ -303,6 +313,17 @@ function vTour(id) {
   }));
   $$('[data-undo]').forEach(b => b.onclick = () => { if (confirm('Annullare gli orari registrati per questa tappa?')) act(() => { delete T.tappe[Number(b.dataset.undo)]; if (!Object.keys(T.tappe).length) delete T.avviatoIl; }); });
   $$('[data-ai]').forEach(b => b.onclick = () => apriAssistenteAI(s.id, b.dataset.ai));
+  $$('[data-tmove]').forEach(b => b.onclick = () => act(() => {
+    const [idx, dir] = b.dataset.tmove.split(':').map(Number);
+    const j = idx + dir;
+    if (j < 0 || j >= s.tappe.length) return;
+    const perId = {};
+    s.tappe.forEach((oldId, k) => { if (T.tappe[k]) perId[oldId] = T.tappe[k]; });
+    [s.tappe[idx], s.tappe[j]] = [s.tappe[j], s.tappe[idx]];
+    const nuovoMappa = {};
+    s.tappe.forEach((nid, k) => { if (perId[nid]) nuovoMappa[k] = perId[nid]; });
+    T.tappe = nuovoMappa;
+  }));
   $('#btnTourAi').onclick = () => apriAssistenteAI(s.id, cur?.id || '');
   $('#btnTourPioggia').onclick = () => apriPianoPioggia(s, {
     inTour: true,

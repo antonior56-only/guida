@@ -22,6 +22,11 @@ function migrate(d) {
     if (def) {
       if (s.coperto === undefined) s.coperto = def.coperto;
       if (s.altCoperto === undefined && def.altCoperto) s.altCoperto = [...def.altCoperto];
+      if (s.url === undefined && def.url !== undefined) s.url = def.url;
+      if (s.lat === undefined && def.lat !== undefined) s.lat = def.lat;
+      if (s.lng === undefined && def.lng !== undefined) s.lng = def.lng;
+      if (s.orariFeriali === undefined && def.orariFeriali !== undefined) s.orariFeriali = def.orariFeriali;
+      if (s.orariFestivi === undefined && def.orariFestivi !== undefined) s.orariFestivi = def.orariFestivi;
     } else if (s.coperto === undefined) {
       s.coperto = true;
     }
@@ -30,8 +35,8 @@ function migrate(d) {
     DEFAULT_DB.siti.forEach(def => {
       if (!d.siti.some(x => x.id === def.id)) d.siti.push(structuredClone(def));
     });
-    d.versione = 2;
   }
+  d.versione = 4;
   d.profilo = { ...structuredClone(DEFAULT_DB.profilo), ...(d.profilo || {}) };
   d.profilo.tariffe = { ...DEFAULT_DB.profilo.tariffe, ...(d.profilo.tariffe || {}) };
   d.seq ??= 1;
@@ -72,6 +77,14 @@ const LINGUE = ['Italiano', 'Inglese', 'Francese', 'Tedesco', 'Spagnolo', 'Porto
 
 const agenzia = id => db.agenzie.find(a => a.id === id);
 const sito = id => db.siti.find(s => s.id === id);
+const safeUrl = u => {
+  const s = String(u || '').trim();
+  if (!s) return '';
+  if (/^https?:\/\//i.test(s)) return s;
+  if (/^[\w.-]+\.[a-z]{2,}/i.test(s)) return 'https://' + s;
+  return '';
+};
+const dominioUrl = u => { try { return new URL(safeUrl(u)).hostname.replace(/^www\./, ''); } catch { return u; } };
 
 function toast(msg) {
   const t = $('#toast');
@@ -318,9 +331,10 @@ function vServizio(id) {
         <div class="row wrap">
           ${field('N° partecipanti', inp('pax', s.pax, 'number', 'min="1"'))}
           ${field('Lingua', sel('lingua', s.lingua, LINGUE.map(l => [l, l])))}
-          ${field('Punto d\'incontro', inp('puntoIncontro', s.puntoIncontro, 'text', 'placeholder="Hotel, porto, aeroporto, piazza…" list="luoghi"'), 'grow')}
+          ${field('Punto d\'incontro (varia l\'ordine di vicinanza delle tappe)', `<div class="row"><input name="puntoIncontro" value="${esc(s.puntoIncontro ?? '')}" placeholder="Hotel, porto, piazza, indirizzo…" list="luoghi"><button type="button" class="btn small" id="btnGeoIncontro" title="Trova coordinate GPS di un hotel o indirizzo specifico">📍</button></div>`, 'grow')}
         </div>
-        <datalist id="luoghi">${[...new Set(['Porto di Palermo – Stazione Marittima', 'Aeroporto Falcone-Borsellino', 'Piazza Politeama', 'Teatro Massimo', 'Cefalù – Piazza Duomo', 'Cefalù – Stazione', ...db.servizi.map(x => x.puntoIncontro).filter(Boolean)])].map(l => `<option value="${esc(l)}">`).join('')}</datalist>
+        <div id="infoIncontro" class="small muted" style="margin:-4px 0 8px"></div>
+        <datalist id="luoghi">${[...new Set([...LUOGHI_INCONTRO.map(x => x.nome), ...db.servizi.map(x => x.puntoIncontro).filter(Boolean)])].map(l => `<option value="${esc(l)}">`).join('')}</datalist>
         <div class="row wrap">
           ${field('Capogruppo / contatto', inp('contatto', s.contatto), 'grow')}
           ${field('Tel. contatto', inp('telContatto', s.telContatto, 'tel'))}
@@ -338,17 +352,19 @@ function vServizio(id) {
         <div class="row between">
           <h3>Itinerario</h3>
           <div class="row wrap">
-            <button type="button" class="btn small" id="btnPioggiaServ">🌧️ Cattivo tempo (al coperto)</button>
-            <button type="button" class="btn small" id="btnAiServ">✨ Approfondisci con Gemini</button>
+            <button type="button" class="btn small primary" id="btnOttimizza" title="Riordina automaticamente le tappe partendo dal punto d'incontro e rispettando gli orari di apertura/chiusura">🧭 Ottimizza ordine</button>
+            <button type="button" class="btn small" id="btnMappaTragitto" title="Apri il percorso completo su Google Maps">🗺️ Mappa</button>
+            <button type="button" class="btn small" id="btnPioggiaServ">🌧️ Cattivo tempo</button>
+            <button type="button" class="btn small" id="btnAiServ">✨ Gemini AI</button>
           </div>
         </div>
         ${field('Titolo del tour (facoltativo)', inp('titolo', s.titolo, 'text', 'placeholder="es. Palermo arabo-normanna"'))}
-        <p class="muted small">Seleziona le tappe nell'ordine di visita (🏛️ al coperto · ☀️ all'aperto).</p>
+        <div id="percorso" class="percorso" style="margin:0 0 12px"></div>
+        <p class="muted small" style="margin:6px 0">➕ <b>Aggiungi o rimuovi siti dal catalogo</b> (spuntali qui sotto; l'ordine si gestisce nel riquadro qui sopra con <b>🧭 Ottimizza ordine</b> o coi tasti <b>↑ Su</b> / <b>↓ Giù</b>):</p>
         <div class="tappe">
           ${zone.map(z => `<fieldset><legend>${esc(z)}</legend>${db.siti.filter(x => x.zona === z).map(t => `
-            <label class="chk tappa"><input type="checkbox" data-sito="${t.id}" ${tappe.includes(t.id) ? 'checked' : ''}> <span title="${t.coperto ? 'Al coperto' : 'All\'aperto'}">${t.coperto ? '🏛️' : '☀️'}</span> ${esc(t.nome)} <small class="muted">${t.durata}'</small></label>`).join('')}</fieldset>`).join('')}
+            <label class="chk tappa"><input type="checkbox" data-sito="${t.id}" ${tappe.includes(t.id) ? 'checked' : ''}><span class="ord-pill" data-ord="${t.id}"></span> <span title="${t.coperto ? 'Al coperto' : 'All\'aperto'}">${t.coperto ? '🏛️' : '☀️'}</span> ${esc(t.nome)} <small class="muted">${t.durata}'</small></label>`).join('')}</fieldset>`).join('')}
         </div>
-        <div id="percorso" class="percorso"></div>
       </section>
 
       <section class="panel">
@@ -397,13 +413,25 @@ function vServizio(id) {
     const confl = conflitti(cur);
     const chiusi = avvisiSiti(cur);
     const minTappe = durataTappe(cur);
+    const sim = simulaScaletta(cur, tappe);
     const minDisp = durataOre(cur) * 60;
+    const minTotStimati = minTappe + sim.totSpost + sim.totAttesa;
+    const ptStart = sim.startCoord;
+    $('#infoIncontro').innerHTML = !cur.puntoIncontro?.trim()
+      ? '💡 Suggerimento: indica il punto d\'incontro per calcolare l\'ordine di vicinanza dalla partenza.'
+      : ptStart
+        ? `📍 Posizione partenza riconosciuta (${esc(ptStart.nome)})`
+        : `⚠️ Indirizzo non in elenco: clicca <b>📍</b> accanto al punto d'incontro (con internet) per localizzare l'hotel esatto.`;
+
     const av = [];
     confl.forEach(o => av.push(`⚠️ Sovrapposto a: <a href="#/servizio/${o.id}">${esc(agenzia(o.agenziaId)?.nome || 'servizio')} ${esc(o.ora)}–${oraFine(o)}</a>`));
     chiusi.forEach(m => av.push(`🚫 ${esc(m)}`));
-    if (minTappe > minDisp) av.push(`⏱️ Le tappe richiedono circa ${Math.round(minTappe / 6) / 10}h, più della durata prevista (${durataOre(cur)}h), spostamenti esclusi.`);
+    sim.steps.filter(st => st.esito === 'fuori_orario').forEach(st =>
+      av.push(`⏰ <b>${esc(st.st.nome)}</b>: arrivo previsto ${fmtOrario(st.arrivo)}–${fmtOrario(st.fine)}, fuori fascia d'apertura (${esc(st.orariTesto)}). Prova <b>🧭 Ottimizza ordine</b>.`)
+    );
+    if (minTotStimati > minDisp) av.push(`⏱️ Visite (${minTappe}') + spostamenti (~${sim.totSpost}') richiedono circa ${Math.round(minTotStimati / 6) / 10}h su ${durataOre(cur)}h previste.`);
     if (cur.data && cur.data < oggiISO() && ['nuova', 'preventivata'].includes(cur.stato)) av.push('📆 La data è già passata.');
-    $('#avvisi').innerHTML = av.length ? `<div class="warn">${av.join('<br>')}</div>` : `<div class="ok">✅ Nessun conflitto · fine prevista ${oraFine(cur)}</div>`;
+    $('#avvisi').innerHTML = av.length ? `<div class="warn">${av.join('<br>')}</div>` : `<div class="ok">✅ Nessun conflitto · fine servizio ${oraFine(cur)}${tappe.length ? ` (fine tappe ~${fmtOrario(sim.fineTotale)})` : ''}</div>`;
 
     $('#riepilogo').innerHTML = `<table class="tot">
       <tr><td>${cur.durata === 'intera' ? 'Giornata intera' : 'Mezza giornata'}</td><td>${eur(c.base)}</td></tr>
@@ -417,11 +445,51 @@ function vServizio(id) {
     ${!cur.ingressiInclusi && c.ingressiPP ? `<p class="muted small">Ingressi stimati a carico turisti/agenzia: ${eur(c.ingressiPP)} a persona.</p>` : ''}`;
 
     $('#percorso').innerHTML = tappe.length
-      ? `<b>Percorso:</b> ${tappe.map((id, i) => {
-          const st = sito(id);
-          return `<span class="step">${st?.coperto ? '🏛️' : '☀️'} ${i + 1}. ${esc(st?.nome || id)}</span>`;
-        }).join(' → ')} <span class="muted">(${minTappe}' di visita${s.tappePrePioggia ? ' · 🌧️ variante pioggia attiva' : ''})</span>`
-      : '<span class="muted">Nessuna tappa selezionata</span>';
+      ? `<div class="row between small" style="margin-bottom:6px">
+          <b>Scaletta dall'incontro (${esc(cur.ora || '09:00')} → ~${fmtOrario(sim.fineTotale)})</b>
+          <span class="muted">visite ${minTappe}' · spostamenti ~${sim.totSpost}'${s.tappePrePioggia ? ' · 🌧️ variante pioggia' : ''}</span>
+        </div>
+        <div class="scaletta">${sim.steps.map((x, i) => {
+          const u = safeUrl(x.st.url);
+          const badgeCls = x.esito === 'chiuso' || x.esito === 'fuori_orario' ? 'sc-bad' : x.esito === 'attesa' || x.notaOrario.startsWith('⚠️') ? 'sc-warn' : 'sc-ok';
+          return `<div class="sc-row ${badgeCls}">
+            <div class="sc-main">
+              <div>
+                ${x.spost.min ? `<span class="sc-move" title="Spostamento stimato">${x.spost.mezzo} ${x.spost.min}' →</span> ` : ''}
+                <b>${fmtOrario(x.inizio)}–${fmtOrario(x.fine)}</b> · ${x.st.coperto ? '🏛️' : '☀️'} <b>${i + 1}. ${esc(x.st.nome)}</b>
+                ${u ? `<a href="${esc(u)}" target="_blank" rel="noopener" title="Verifica orari sul sito ufficiale (${esc(dominioUrl(u))})">🌐</a>` : ''}
+              </div>
+              ${x.notaOrario ? `<div class="small muted">${esc(x.notaOrario)}</div>` : ''}
+            </div>
+            <div class="sc-act">
+              <button type="button" class="btn small" data-move="${i}:-1" ${i === 0 ? 'disabled' : ''} title="Sposta su (anticipa tappa)">↑ Su</button>
+              <button type="button" class="btn small" data-move="${i}:1" ${i === tappe.length - 1 ? 'disabled' : ''} title="Sposta giù (posticipa tappa)">↓ Giù</button>
+              <button type="button" class="btn small" data-rm="${i}" title="Rimuovi tappa">✕</button>
+            </div>
+          </div>`;
+        }).join('')}</div>`
+      : '<span class="muted">Nessuna tappa ancora selezionata: spunta i siti dall\'elenco qui sotto.</span>';
+
+    $$('[data-ord]', form).forEach(el => {
+      const idx = tappe.indexOf(el.dataset.ord);
+      el.textContent = idx >= 0 ? `${idx + 1}°` : '';
+      el.style.display = idx >= 0 ? 'inline-block' : 'none';
+    });
+
+    $$('[data-move]', $('#percorso')).forEach(b => b.onclick = () => {
+      const [idx, dir] = b.dataset.move.split(':').map(Number);
+      const j = idx + dir;
+      if (j < 0 || j >= tappe.length) return;
+      [tappe[idx], tappe[j]] = [tappe[j], tappe[idx]];
+      upd();
+    });
+    $$('[data-rm]', $('#percorso')).forEach(b => b.onclick = () => {
+      const idRm = tappe[Number(b.dataset.rm)];
+      tappe = tappe.filter((_, k) => k !== Number(b.dataset.rm));
+      const cb = form.querySelector(`[data-sito="${idRm}"]`);
+      if (cb) cb.checked = false;
+      upd();
+    });
 
     const sc = scadenzaPagamento(cur);
     $('#scadenza').innerHTML = sc ? `Scadenza pagamento: <b>${fmtData(sc)}</b>` : '';
@@ -444,6 +512,52 @@ function vServizio(id) {
     if (form.elements['stato'].value === 'fatturata' && !form.elements['dataFattura'].value) form.elements['dataFattura'].value = oggiISO();
     upd();
   });
+  const localizzaPuntoIncontro = async silenzioso => {
+    const testo = form.elements['puntoIncontro'].value.trim();
+    if (!testo) { if (!silenzioso) toast('Scrivi prima il luogo o l\'hotel nel Punto d\'incontro'); return false; }
+    const gia = risolviPuntoIncontro({ ...s, puntoIncontro: testo });
+    if (gia && gia.fonte !== 'gps' && silenzioso) return true;
+    try {
+      if (!silenzioso) toast('📍 Ricerca coordinate indirizzo…');
+      const zonaHint = sito(tappe[0])?.zona || 'Palermo';
+      const g = await geocodificaIndirizzo(testo, zonaHint);
+      s.puntoCoords = { lat: g.lat, lng: g.lng, testo };
+      upd();
+      if (!silenzioso) toast('📍 Posizione trovata: ' + g.display.split(',').slice(0, 2).join(','));
+      return true;
+    } catch (e) {
+      if (!silenzioso) alert(e.message);
+      return false;
+    }
+  };
+
+  $('#btnGeoIncontro').addEventListener('click', () => localizzaPuntoIncontro(false));
+
+  $('#btnOttimizza').addEventListener('click', async () => {
+    if (tappe.length < 2) { toast('Seleziona almeno 2 tappe da riordinare'); return; }
+    const bozza = { ...s, ...read() };
+    if (bozza.puntoIncontro?.trim() && !risolviPuntoIncontro(bozza) && navigator.onLine) {
+      await localizzaPuntoIncontro(true);
+    }
+    const cur = { ...s, ...read() };
+    const res = ottimizzaOrdineTappe(cur);
+    tappe = res.ordine;
+    upd();
+    if (res.cambiato) {
+      const risparmio = res.prima.totSpost - res.simulazione.totSpost;
+      toast(`🧭 Tappe riordinate per vicinanza e orari${risparmio > 0 ? ` (−${risparmio}' di spostamenti)` : ''}`);
+    } else {
+      toast('✅ L\'ordine attuale è già il migliore per vicinanza e orari!');
+    }
+  });
+
+  $('#btnMappaTragitto').addEventListener('click', () => {
+    const cur = { ...s, ...read() };
+    const u = urlGoogleMapsPercorso(cur);
+    if (!u) { toast('Seleziona almeno una tappa per aprire la mappa'); return; }
+    window.open(u, '_blank', 'noopener');
+  });
+
   $('#btnPioggiaServ').addEventListener('click', () => {
     const draft = { ...s, ...read() };
     apriPianoPioggia(draft, {
@@ -706,20 +820,25 @@ function vSiti() {
   <section class="panel">
     <div class="row between"><h2>Siti e tappe</h2><button class="btn primary" id="btnAddSito">+ Nuovo sito</button></div>
     <p class="muted small">⚠️ Costi d'ingresso e giorni di chiusura sono da inserire/verificare: orari e tariffe cambiano spesso. La data dell'ultima modifica è mostrata accanto a ogni sito.</p>
-    ${zone.map(z => `<h3>${esc(z)}</h3><div class="cards">${db.siti.filter(x => x.zona === z).map(t => `
+    ${zone.map(z => `<h3>${esc(z)}</h3><div class="cards">${db.siti.filter(x => x.zona === z).map(t => {
+      const u = safeUrl(t.url);
+      return `
       <div class="card">
         <div class="card-h"><strong>${t.coperto ? '🏛️' : '☀️'} ${esc(t.nome)}</strong><button class="btn small" data-edit="${t.id}">Modifica</button></div>
-        <div>${t.coperto ? 'Al coperto' : 'All\'aperto'} · ~${t.durata}' · ingresso ${num(t.costo) ? eur(t.costo) : '<span class="muted">n.d.</span>'} · ${(t.chiuso || []).length ? 'chiuso ' + t.chiuso.map(g => GIORNI[g]).join(', ') : '<span class="muted">chiusure n.d.</span>'}</div>
+        <div>${t.coperto ? 'Al coperto' : 'All\'aperto'} · ~${t.durata}' · ingresso ${num(t.costo) ? eur(t.costo) : '<span class="muted">n.d.</span>'} · ${(t.chiuso || []).length ? 'chiuso ' + t.chiuso.map(g => GIORNI[g]).join(', ') : '<span class="muted">nessun giorno fisso</span>'}</div>
+        <div class="small">🕒 Feriali: <b>${esc(t.orariFeriali || 'sempre accessibile')}</b>${t.orariFestivi ? ` · Festivi: <b>${esc(t.orariFestivi)}</b>` : ''}</div>
+        ${u ? `<div class="small">🌐 <a href="${esc(u)}" target="_blank" rel="noopener">${esc(dominioUrl(u))} – verifica orari e tariffe ↗</a></div>` : ''}
         ${t.note ? `<div class="small muted">${esc(t.note)}</div>` : ''}
         <div class="small muted">${t.verificato ? 'Verificato il ' + fmtData(t.verificato) : 'Mai verificato'}</div>
-      </div>`).join('')}</div>`).join('')}
+      </div>`;
+    }).join('')}</div>`).join('')}
   </section>`;
   $('#btnAddSito').addEventListener('click', () => modaleSito(null));
   $$('[data-edit]').forEach(b => b.addEventListener('click', () => modaleSito(b.dataset.edit)));
 }
 
 function modaleSito(id) {
-  const t = id ? structuredClone(sito(id)) : { id: uid(), zona: 'Palermo', nome: '', durata: 30, costo: 0, coperto: true, chiuso: [], note: '' };
+  const t = id ? structuredClone(sito(id)) : { id: uid(), zona: 'Palermo', nome: '', durata: 30, costo: 0, coperto: true, url: '', orariFeriali: '', orariFestivi: '', lat: '', lng: '', chiuso: [], note: '' };
   const dlg = $('#modal');
   $('#modalBody').innerHTML = `
     <form id="fSito">
@@ -730,6 +849,16 @@ function modaleSito(id) {
         <datalist id="zone">${[...new Set(db.siti.map(x => x.zona))].map(z => `<option value="${esc(z)}">`).join('')}</datalist>
         ${field('Durata visita (min)', inp('durata', t.durata, 'number', 'min="0"'))}
         ${field('Ingresso a persona €', inp('costo', t.costo, 'number', 'step="0.01" min="0"'))}
+      </div>
+      <div class="row wrap">
+        ${field('Orario feriale Lun–Sab (es. 09:00-13:00, 15:30-18:30)', inp('orariFeriali', t.orariFeriali, 'text', 'placeholder="vuoto = sempre accessibile"'), 'grow')}
+        ${field('Orario domenica e festivi', inp('orariFestivi', t.orariFestivi, 'text', 'placeholder="vuoto = come feriale, o \'chiuso\'"'), 'grow')}
+      </div>
+      ${field('Sito web ufficiale (per verificare orari, chiusure e biglietteria)', `<div class="row"><input name="url" id="inpSitoUrl" type="url" value="${esc(t.url || '')}" placeholder="https://..."><button type="button" class="btn small" id="btnApriUrlSito">🌐 Apri ↗</button></div>`)}
+      <div class="row wrap">
+        ${field('Latitudine GPS', inp('lat', t.lat ?? '', 'number', 'step="any" placeholder="38.1157"'))}
+        ${field('Longitudine GPS', inp('lng', t.lng ?? '', 'number', 'step="any" placeholder="13.3614"'))}
+        <button type="button" class="btn small" id="btnGeoSito" style="margin-bottom:10px">📍 Cerca coordinate dal nome</button>
       </div>
       ${chk('coperto', t.coperto !== false, '🏛️ Sito al coperto (idoneo come alternativa in caso di pioggia/maltempo)')}
       <fieldset><legend>Chiuso di solito il</legend>
@@ -745,6 +874,26 @@ function modaleSito(id) {
     </form>`;
   dlg.showModal();
   $('#btnAnnulla').onclick = () => dlg.close();
+  $('#btnApriUrlSito').onclick = () => {
+    const u = safeUrl($('#inpSitoUrl').value);
+    if (!u) { toast('Inserisci prima un indirizzo web valido'); return; }
+    window.open(u, '_blank', 'noopener');
+  };
+  $('#btnGeoSito').onclick = async () => {
+    const f = $('#fSito');
+    const nome = f.elements['nome'].value.trim();
+    const zona = f.elements['zona'].value.trim() || 'Palermo';
+    if (!nome) { toast('Scrivi prima il nome del sito'); return; }
+    try {
+      toast('📍 Ricerca coordinate…');
+      const g = await geocodificaIndirizzo(nome, zona);
+      f.elements['lat'].value = g.lat.toFixed(5);
+      f.elements['lng'].value = g.lng.toFixed(5);
+      toast('📍 Coordinate trovate');
+    } catch (e) {
+      alert(e.message);
+    }
+  };
   $('#btnDelSito')?.addEventListener('click', () => {
     if (db.servizi.some(s => (s.tappe || []).includes(id)) && !confirm('Il sito è usato in alcuni servizi. Eliminarlo comunque?')) return;
     db.siti = db.siti.filter(x => x.id !== id); save(); dlg.close(); render();
@@ -752,8 +901,22 @@ function modaleSito(id) {
   $('#fSito').addEventListener('submit', e => {
     e.preventDefault();
     const o = formData(e.target);
-    const rec = { ...t, nome: o.nome.trim(), zona: o.zona.trim() || 'Altro', durata: num(o.durata), costo: num(o.costo), coperto: !!o.coperto, note: o.note,
-      chiuso: $$('[data-g]', e.target).filter(c => c.checked).map(c => Number(c.dataset.g)), verificato: oggiISO() };
+    const rec = {
+      ...t,
+      nome: o.nome.trim(),
+      zona: o.zona.trim() || 'Altro',
+      durata: num(o.durata),
+      costo: num(o.costo),
+      coperto: !!o.coperto,
+      url: safeUrl(o.url),
+      orariFeriali: o.orariFeriali.trim(),
+      orariFestivi: o.orariFestivi.trim(),
+      lat: o.lat === '' ? undefined : num(o.lat),
+      lng: o.lng === '' ? undefined : num(o.lng),
+      note: o.note,
+      chiuso: $$('[data-g]', e.target).filter(c => c.checked).map(c => Number(c.dataset.g)),
+      verificato: oggiISO()
+    };
     const i = db.siti.findIndex(x => x.id === t.id);
     if (i >= 0) db.siti[i] = rec; else db.siti.push(rec);
     save(); dlg.close(); toast('Sito salvato'); render();

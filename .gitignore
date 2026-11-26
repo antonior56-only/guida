@@ -1,0 +1,11 @@
+# File di sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Evita di caricare per errore backup personali o file locali con chiavi
+guidapa-backup-*.json
+guidapa-servizi-*.csv
+.env
+.env.*
+*secret*
